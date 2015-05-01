@@ -27,8 +27,8 @@ class Square():
 
     '''
 
-    WIDTH = 25
-    HEIGHT = 25
+    WIDTH = 50
+    HEIGHT = 50
     PADDING = 10
 
     def __init__(self, parent, row, col, letter = None, number = ''):
@@ -102,5 +102,4 @@ class Square():
 
     def setText(self, text):
         if self._lblLetter:
-            print 'setting text'
             self._lblLetter.text = text
