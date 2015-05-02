@@ -3,6 +3,7 @@ import certifi
 import pyglet
 from grid import Grid
 from pyglet.gl import *
+import xwordhtmlparser as parser
 
 CLUE_WIDTH = 150
 HORIZ_PADDING = 10
@@ -20,7 +21,7 @@ class Crossword(pyglet.window.Window):
     _clueLabels
     '''
 
-    def __init__(self, url):
+    def __init__(self, url, fromSave):
         '''
         Load a crossword puzzle from the specified url
         The url must lead to an html page formatted as those at 
@@ -39,39 +40,24 @@ class Crossword(pyglet.window.Window):
         f.write(response.data)
         f.close()
 
-        #self._grid, self._acrossClues, self._downClues = self.parseHTMLFromSource(response.data)
+        self._grid = None
+        self._acrossClues = None
+        self._downClues = None
+
+        if not fromSave:
+            self._grid, self._acrossClues, self._downClues = parser.parseHTMLFromSource(response.data)
         #self._grid.x = self.width - self._grid.width
         #self._grid.y = self.height - self._grid.height
-        #sort(self._acrossClues, key=lambda clue:clue[0])
-        #sort(self._downClues, key=lambda clue:clue[0])
+        self._acrossClues.sort(key=lambda clue:int(clue[0]))
+        self._downClues.sort(key=lambda clue:int(clue[0]))
+
         self._grid = Grid(15)
         self._grid.x = self.width - self._grid.width
         self._grid.y = self.height - self._grid.height
 
-        self._acrossClues = []
-        self._downClues = []
-
-        for i in range(35):
-            self._acrossClues.append((i, 'This is just another test clue _____'))
-            self._downClues.append((i, 'This is just another test clue _____'))
-
         self._clueLabels = []
 
         self._needsRedraw = True
-
-    def parseHTMLFromSource(self, html):
-        '''
-        Take an html page formatted as those at
-        http://www.theguardian.com/crosswords/ and parse the data to
-        return the various components of a crossword. Returns a tuple of the form
-        (grid, across clues, down clues).
-
-        Grid is a grid object
-        Clues are lists of tuples of the form (n, t), where n is the number of the clue
-        and t is the text of the clue
-        '''
-
-        pass
 
     def parseHTMLFromSave(self, html):
         '''
