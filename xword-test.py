@@ -4,6 +4,6 @@ from square import Square
 import pyglet
 
 if __name__ == '__main__':
-	xword = Crossword('http://freecrosswordpuzzles.com.au/printablecrossword.aspx?cw=M2-5-2015', False)
+	xword = Crossword('http://freecrosswordpuzzles.com.au/printablecrossword.aspx?cw=M1-1-2014', False)
 
 	pyglet.app.run()

@@ -28,7 +28,7 @@ class Crossword(pyglet.window.Window):
         http://www.theguardian.com/crosswords/
         '''
 
-        super(Crossword, self).__init__(resizable = True, width=1000, height = 750)
+        super(Crossword, self).__init__(resizable = True, width=1000, height = 750, caption = 'XWord Online')
 
         http = urllib3.PoolManager(
             cert_reqs='CERT_REQUIRED', # Force certificate check.
@@ -36,7 +36,7 @@ class Crossword(pyglet.window.Window):
         )
         response = http.request('GET', url) 
 
-        f = open('C:/Users/Jeb/Desktop/xword-test.txt', 'w')
+        f = open('C:/Users/Jeb/Desktop/xword-test.html', 'w')
         f.write(response.data)
         f.close()
 
@@ -46,14 +46,11 @@ class Crossword(pyglet.window.Window):
 
         if not fromSave:
             self._grid, self._acrossClues, self._downClues = parser.parseHTMLFromSource(response.data)
-        #self._grid.x = self.width - self._grid.width
-        #self._grid.y = self.height - self._grid.height
-        self._acrossClues.sort(key=lambda clue:int(clue[0]))
-        self._downClues.sort(key=lambda clue:int(clue[0]))
-
-        self._grid = Grid(15)
         self._grid.x = self.width - self._grid.width
         self._grid.y = self.height - self._grid.height
+
+        self._acrossClues.sort(key=lambda clue:int(clue[0]))
+        self._downClues.sort(key=lambda clue:int(clue[0]))
 
         self._clueLabels = []
 
@@ -143,9 +140,11 @@ class Crossword(pyglet.window.Window):
             self._grid.on_mouse_release(x, y, button, modifiers)
         else:
             self._grid.setFocusedSquare(None)
+        self._needsRedraw = True
 
     def on_key_press(self, symbol, modifiers):
         self._grid.on_key_press(symbol, modifiers)
+        self._needsRedraw = True
 
     def on_draw(self, lastSize = []):
         pyglet.gl.glClearColor(1.0,1.0,1.0,1.0)

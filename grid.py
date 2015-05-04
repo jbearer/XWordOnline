@@ -19,7 +19,7 @@ class Grid():
     _focusedSquare: the square with the focus
     '''
 
-    def __init__(self, width, height = None, x = 0, y = 0):
+    def __init__(self, width = 0, height = None, x = 0, y = 0):
         '''
         Create a grid of width x height empty squares.
         If the argument height is absent, the grid is square with side length = width
@@ -48,6 +48,12 @@ class Grid():
         return self._squares[row][col]
 
     def setSquare(self, row, col, square):
+        while row >= self.getNumRows():
+            self.addRow()
+        
+        while col >= self.getNumCols():
+            self.addCol()
+        
         self._squares[row][col] = square
 
     def getNumRows(self):
@@ -56,7 +62,37 @@ class Grid():
     def getNumCols(self):
         return self.numCols
 
+    def addRow(self):
+        '''
+        Append a row of black squares to the bottom of the grid
+        '''
+
+        self.numRows += 1
+        self.height += Square.HEIGHT
+
+        newRow = []
+        for col in range(self.getNumCols()):
+            newRow.append(Square(self, self.getNumRows(), col, ''))
+
+        self._squares.append(newRow)
+
+    def addCol(self):
+        '''
+        Append a column of black squares to the right of the grid
+        '''
+
+        self.numCols += 1
+        self.width += Square.WIDTH
+
+        for row in range(self.getNumRows()):
+            self._squares[row].append(Square(self,row,self.getNumCols(), ''))
+
+
     def setFocusedSquare(self, square):
+        if square and square.letter is None:
+            # black square cannot have focus
+            return
+
         if self._focusedSquare:
             # force old focused square to release focus
             self._focusedSquare.hasFocus = False
@@ -100,6 +136,7 @@ class Grid():
                     break
 
     def on_key_press(self, symbol, modifiers):
+
         if self._focusedSquare:
             if symbol >= key.A and symbol <= key.Z:
                 self._focusedSquare.setText(chr(symbol).upper())

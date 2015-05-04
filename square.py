@@ -43,12 +43,12 @@ class Square():
         self.hasFocus = False
 
         if letter is not None:
-            self._lblLetter = pyglet.text.Label(letter, anchor_x = 'center', anchor_y = 'center')
+            self._lblLetter = pyglet.text.Label(letter, anchor_x = 'center', anchor_y = 'center', font_size = 12)
             self._lblLetter.color = (0,0,0,255)
         else:
             self._lblLetter = None
 
-        self._lblNumber = pyglet.text.Label(number, anchor_x='center', anchor_y='center')
+        self._lblNumber = pyglet.text.Label(number, anchor_x='left', anchor_y='top', font_size = 8)
         self._lblNumber.color = (0,0,0,255)
 
     def draw_rect_outline(self, x, y, width, height, window):
@@ -75,6 +75,9 @@ class Square():
                 self.y < y < self.y + self.HEIGHT)
 
     def draw(self, window):
+        self.x = self.col * self.WIDTH
+        self.y = (self.parent.getNumRows() - self.row - 1) * self.HEIGHT
+
         if self.letter is None:
             # black square
             self.draw_rect_filled(self.x + self.parent.x, self.y + self.parent.y, self.WIDTH, self.HEIGHT, window)
