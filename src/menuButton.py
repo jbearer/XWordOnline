@@ -76,7 +76,7 @@ class Button(Control):
         if self.charged:
             glColor3f(1, 0, 0)
         draw_rect(self.x, self.y, self.width, self.height)
-        glColor3f(1, 1, 1)
+        glColor3f(0, 0, 0)
         self.draw_label()
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -96,8 +96,8 @@ Button.register_event_type('on_press')
     
 class MenuButton(Button):
     def __init__(self, *args, **kwargs):
-        super(TextButton, self).__init__(*args, **kwargs)
-        self._text = pyglet.text.Label('', anchor_x='center', anchor_y='center')
+        super(MenuButton, self).__init__(*args, **kwargs)
+        self._text = pyglet.text.Label('', anchor_x='center', anchor_y='center', color = (0,0,0,255))
 
     def draw_label(self):
         self._text.x = self.x + self.width / 2

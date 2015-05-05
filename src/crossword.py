@@ -4,11 +4,14 @@ import pyglet
 from grid import Grid
 from pyglet.gl import *
 import xwordhtmlparser as parser
+from menubutton import MenuButton
 
 CLUE_WIDTH = 150
 HORIZ_PADDING = 10
 VERT_PADDING = 10
 FONT_SIZE = 10
+BUTTON_HEIGHT = 40
+BUTTON_WIDTH = 150
 
 class Crossword(pyglet.window.Window):
     '''
@@ -34,7 +37,43 @@ class Crossword(pyglet.window.Window):
         self._acrossClues = None
         self._downClues = None
         self._clueLabels = []
-        self._needsRedraw = True
+
+        self._btnRefresh = MenuButton(self)
+        self._btnRefresh.x = HORIZ_PADDING
+        self._btnRefresh.y = self.height - VERT_PADDING - BUTTON_HEIGHT
+        self._btnRefresh.width = BUTTON_WIDTH
+        self._btnRefresh.height = BUTTON_HEIGHT
+        self._btnRefresh.text = 'Refresh'
+        self._btnRefresh.on_press = self.refresh
+
+        self._btnLoadSaved = MenuButton(self)
+        self._btnLoadSaved.x = self._btnRefresh.x + BUTTON_WIDTH + HORIZ_PADDING
+        self._btnLoadSaved.y = self._btnRefresh.y
+        self._btnLoadSaved.width = BUTTON_WIDTH
+        self._btnLoadSaved.height = BUTTON_HEIGHT
+        self._btnLoadSaved.text = 'Load Saved Puzzle'
+        self._btnLoadSaved.on_press = self.loadPuzzleFromSave
+
+        self._btnLoadFromSource = MenuButton(self)
+        self._btnLoadFromSource.x = self._btnLoadSaved.x + BUTTON_WIDTH + HORIZ_PADDING
+        self._btnLoadFromSource.y = self._btnLoadSaved.y
+        self._btnLoadFromSource.width = BUTTON_WIDTH
+        self._btnLoadFromSource.height = BUTTON_HEIGHT
+        self._btnLoadFromSource.text = 'Load New Puzzle'
+        self._btnLoadFromSource.on_press = self.loadPuzzleFromSource
+
+        self._btnRand = MenuButton(self)
+        self._btnRand.x = self._btnLoadFromSource.x + BUTTON_WIDTH + HORIZ_PADDING
+        self._btnRand.y = self._btnLoadFromSource.y
+        self._btnRand.width = BUTTON_WIDTH
+        self._btnRand.height = BUTTON_HEIGHT
+        self._btnRand.text = 'Random Puzzle'
+        self._btnRand.on_press = self.loadRandomPuzzle
+
+        self._controls = [self._btnRefresh,
+                          self._btnLoadSaved,
+                          self._btnLoadFromSource,
+                          self._btnRand]
 
         if not fromSave:
             self.loadPuzzleFromSource(url)
@@ -64,13 +103,30 @@ class Crossword(pyglet.window.Window):
         f.close()
 
         self._grid, self._acrossClues, self._downClues = parser.parseHTMLFromSource(response.data)
-        self._grid.x = self.width - self._grid.width
-        self._grid.y = self.height - self._grid.height
+        self._grid.x = self.width - self._grid.width - HORIZ_PADDING
+        self._grid.y = self._btnRefresh.y - VERT_PADDING - self._grid.height
 
         self._acrossClues.sort(key=lambda clue:int(clue[0]))
         self._downClues.sort(key=lambda clue:int(clue[0]))
 
-        self._needsRedraw = True
+    def loadPuzzleFromSave(self):
+        pass
+
+    def loadRandomPuzzle(self):
+        pass
+
+    def setUpButtons(self):
+        self._btnRefresh.x = HORIZ_PADDING
+        self._btnRefresh.y = self.height - VERT_PADDING - BUTTON_HEIGHT
+
+        self._btnLoadSaved.x = self._btnRefresh.x + BUTTON_WIDTH + HORIZ_PADDING
+        self._btnLoadSaved.y = self._btnRefresh.y
+
+        self._btnLoadFromSource.x = self._btnLoadSaved.x + BUTTON_WIDTH + HORIZ_PADDING
+        self._btnLoadFromSource.y = self._btnLoadSaved.y
+
+        self._btnRand.x = self._btnLoadFromSource.x + BUTTON_WIDTH + HORIZ_PADDING
+        self._btnRand.y = self._btnLoadFromSource.y
 
     def setUpClues(self):
 
@@ -80,10 +136,17 @@ class Crossword(pyglet.window.Window):
         self._clueLabels = []
 
         xPos = HORIZ_PADDING
-        yPos = self.height - 2*VERT_PADDING
+        yPos = self._btnRefresh.y - VERT_PADDING
 
         # draw the across label
-        heading = pyglet.text.Label('Across', bold = True, color=(0,0,0,255), font_size = FONT_SIZE + 2, x = xPos, y = yPos)
+        heading = pyglet.text.Label('Across', bold = True,
+                                    color=(0,0,0,255),
+                                    font_size = FONT_SIZE + 2,
+                                    anchor_x = 'left',
+                                    anchor_y = 'top',
+                                    x = xPos,
+                                    y = yPos)
+
         self._clueLabels.append(heading)
 
         yPos -= heading.content_height
@@ -94,8 +157,11 @@ class Crossword(pyglet.window.Window):
                                      multiline=True,
                                      color=(0,0,0,255),
                                      font_size = FONT_SIZE,
+                                     anchor_x = 'left',
+                                     anchor_y = 'top',
                                      x = xPos,
                                      y = yPos)
+
             self._clueLabels.append(clue)
             
             yPos -= (clue.content_height + VERT_PADDING)
@@ -106,10 +172,17 @@ class Crossword(pyglet.window.Window):
                     # move below the grid
                     yPos = self._grid.y - 2*VERT_PADDING
                 else:
-                    yPos = self.height - 2*VERT_PADDING
+                    yPos = self._btnRefresh.y - VERT_PADDING
 
         # draw the down label
-        heading = pyglet.text.Label('Down', bold = True, color=(0,0,0,255), font_size = FONT_SIZE + 2, x = xPos, y = yPos)
+        heading = pyglet.text.Label('Down',
+                                    bold = True,
+                                    color=(0,0,0,255),
+                                    font_size = FONT_SIZE + 2,
+                                    anchor_x = 'left',
+                                    anchor_y = 'top',
+                                    x = xPos,
+                                    y = yPos)
         self._clueLabels.append(heading)
 
         yPos -= heading.content_height
@@ -120,6 +193,8 @@ class Crossword(pyglet.window.Window):
                                      multiline=True,
                                      color=(0,0,0,255),
                                      font_size = FONT_SIZE,
+                                     anchor_x = 'left',
+                                     anchor_y = 'top',
                                      x = xPos,
                                      y = yPos)
             self._clueLabels.append(clue)
@@ -132,51 +207,54 @@ class Crossword(pyglet.window.Window):
                     # move below the grid
                     yPos = self._grid.y - 2*VERT_PADDING
                 else:
-                    yPos = self.height - 2*VERT_PADDING
+                    yPos = self._btnRefresh.y - VERT_PADDING
 
-    def on_mouse_enter(self, x, y, lastSize = []):
-        if lastSize != [self.width, self.height]:
-            self._needsRedraw = True
-            lastSize = [self.width, self.height]
-        else:
-            self._needsRedraw = False
-                
-    def on_mouse_release(self, x, y, button, modifiers):
+    lastSize = []
+    def on_mouse_enter(self, x, y):
+        if self.lastSize != [self.width, self.height]:
+            self.on_draw()
+            self.lastSize = [self.width, self.height]
+
+    def on_mouse_press(self, x, y, button, modifiers):
         for control in self._controls:
             if control.hit_test(x, y):
                 control.on_mouse_press(x, y, button, modifiers)
                 return
-
+                
+    def on_mouse_release(self, x, y, button, modifiers):
         if self._grid.hit_test(x, y):
             self._grid.on_mouse_release(x, y, button, modifiers)
         else:
             self._grid.setFocusedSquare(None)
-        self._needsRedraw = True
 
     def on_key_press(self, symbol, modifiers):
         self._grid.on_key_press(symbol, modifiers)
-        self._needsRedraw = True
 
     def on_draw(self, lastSize = []):
+        
         pyglet.gl.glClearColor(1.0,1.0,1.0,1.0)
         self.clear()
 
-        if self._needsRedraw:
-            glViewport(0,0,self.width,self.height);
-            glMatrixMode(GL_PROJECTION);
-            glLoadIdentity();
-            gluOrtho2D(0,self.width,0,self.height);
-            glMatrixMode(GL_MODELVIEW);
-            glLoadIdentity();
+        glViewport(0,0,self.width,self.height);
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        gluOrtho2D(0,self.width,0,self.height);
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
 
-            self._grid.x = self.width - self._grid.width
-            self._grid.y = self.height - self._grid.height
+        self._grid.x = self.width - self._grid.width - HORIZ_PADDING
+        self._grid.y = self._btnRefresh.y - VERT_PADDING - self._grid.height
 
-            self.setUpClues()
+        self.setUpClues()
 
-            for label in self._clueLabels:
-                label.draw()
+        for label in self._clueLabels:
+            label.draw()
 
-            self._needsRedraw = False
+        self.setUpButtons()
+        for control in self._controls:
+            control.draw()
 
         self._grid.draw(self)
+
+    def refresh(self):
+        pass
