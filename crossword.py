@@ -30,31 +30,14 @@ class Crossword(pyglet.window.Window):
 
         super(Crossword, self).__init__(resizable = True, width=1000, height = 750, caption = 'XWord Online')
 
-        http = urllib3.PoolManager(
-            cert_reqs='CERT_REQUIRED', # Force certificate check.
-            ca_certs=certifi.where()  # Path to the Certifi bundle.
-        )
-        response = http.request('GET', url) 
-
-        f = open('C:/Users/Jeb/Desktop/xword-test.html', 'w')
-        f.write(response.data)
-        f.close()
-
         self._grid = None
         self._acrossClues = None
         self._downClues = None
+        self._clueLabels = []
+        self._needsRedraw = True
 
         if not fromSave:
-            self._grid, self._acrossClues, self._downClues = parser.parseHTMLFromSource(response.data)
-        self._grid.x = self.width - self._grid.width
-        self._grid.y = self.height - self._grid.height
-
-        self._acrossClues.sort(key=lambda clue:int(clue[0]))
-        self._downClues.sort(key=lambda clue:int(clue[0]))
-
-        self._clueLabels = []
-
-        self._needsRedraw = True
+            self.loadPuzzleFromSource(url)
 
     def parseHTMLFromSave(self, html):
         '''
@@ -69,7 +52,30 @@ class Crossword(pyglet.window.Window):
 
         pass
 
+    def loadPuzzleFromSource(self, url):
+        http = urllib3.PoolManager(
+            cert_reqs='CERT_REQUIRED', # Force certificate check.
+            ca_certs=certifi.where()  # Path to the Certifi bundle.
+        )
+        response = http.request('GET', url) 
+
+        f = open('C:/Users/Jeb/Desktop/xword-test.html', 'w')
+        f.write(response.data)
+        f.close()
+
+        self._grid, self._acrossClues, self._downClues = parser.parseHTMLFromSource(response.data)
+        self._grid.x = self.width - self._grid.width
+        self._grid.y = self.height - self._grid.height
+
+        self._acrossClues.sort(key=lambda clue:int(clue[0]))
+        self._downClues.sort(key=lambda clue:int(clue[0]))
+
+        self._needsRedraw = True
+
     def setUpClues(self):
+
+        if self._acrossClues is None or self._downClues is None:
+            return
 
         self._clueLabels = []
 
@@ -136,6 +142,11 @@ class Crossword(pyglet.window.Window):
             self._needsRedraw = False
                 
     def on_mouse_release(self, x, y, button, modifiers):
+        for control in self._controls:
+            if control.hit_test(x, y):
+                control.on_mouse_press(x, y, button, modifiers)
+                return
+
         if self._grid.hit_test(x, y):
             self._grid.on_mouse_release(x, y, button, modifiers)
         else:
