@@ -1,7 +1,7 @@
 import urllib3
 import certifi
 import pyglet
-from grid import Grid
+from grid import *
 from pyglet.gl import *
 import xwordhtmlparser as parser
 from menubutton import MenuButton
@@ -77,6 +77,16 @@ class Crossword(pyglet.window.Window):
 
         if not fromSave:
             self.loadPuzzleFromSource(url)
+
+        self._grid._squares[0][0].setText('A')
+
+        oldGrid = self._grid
+        print 'evaling'
+        print repr(self._grid)
+        print 'evaling now'
+        self._grid = eval(repr(self._grid))
+        print 'done evaling' + str(self._grid == oldGrid)
+
 
     def parseHTMLFromSave(self, html):
         '''

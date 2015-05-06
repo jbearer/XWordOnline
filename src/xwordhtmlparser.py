@@ -5,7 +5,7 @@ from grid import Grid
 
 '''
 Module containing classes to parse html files containing crossword data
-Parses html files at urls like http://freecrosswordpuzzles.com.au/printablecrossword.aspx?cw=M2-5-2015
+Parses html files at urls like http://freecrosswordpuzzles.com.au/#printablecrossword.aspx?cw=M2-5-2015
 '''
 
 DOWN = 'Down'
@@ -14,7 +14,7 @@ ACROSS = 'Across'
 def parseHTMLFromSource(html):
         '''
         Take an html page formatted as those at
-        http://freecrosswordpuzzles.com.au/printablecrossword.aspx?cw=M2-5-2015 and parse the data to
+        http://freecrosswordpuzzles.com.au/#printablecrossword.aspx?cw=M2-5-2015 and parse the data to
         return the various components of a crossword. Returns a tuple of the form
         (grid, across clues, down clues).
 
@@ -23,19 +23,19 @@ def parseHTMLFromSource(html):
         and t is the text of the clue
         '''
 
-        print 'parsing across clues \n\n\n'
+        #print 'parsing across clues \n\n\n'
         acrossClues = []
         aParser = ParseClues(acrossClues, ACROSS)
         aParser.feed(html)
         aParser.close()
 
-        print 'parsing down clues \n\n\n'
+        #print 'parsing down clues \n\n\n'
         downClues = []
         dParser = ParseClues(downClues, DOWN)
         dParser.feed(html)
         aParser.close()
 
-        print 'parsing grid \n\n\n'
+        #print 'parsing grid \n\n\n'
         grid = Grid()
         gParser = ParseGrid(grid)
         gParser.feed(html)
@@ -112,7 +112,7 @@ class ParseClues(HTMLParser.HTMLParser):
             # look for <div id=<clueType>Clues
             if tag == 'div' and ('id', self._clueType + 'Clues') in attrs:
                 self._state = self.states.IN_CLUE_CLASS
-                print 'entering IN_CLUE_CLASS state'
+                #print 'entering IN_CLUE_CLASS state'
 
         elif self._state == self.states.IN_CLUE_CLASS:
             # look for <div id=divClue<clueNumber>>
@@ -122,7 +122,7 @@ class ParseClues(HTMLParser.HTMLParser):
                 clueID = re.compile(r"divClue(\d+)")
                 for attrib in attrs:
                     if attrib[0] == 'id':
-                        print 'looking for clue #: ' + attrib[1]
+                        #print 'looking for clue #: ' + attrib[1]
                         match = re.match(clueID, attrib[1])
                         if match:
                             # we have the number now, so add it to currentClue
@@ -140,14 +140,14 @@ class ParseClues(HTMLParser.HTMLParser):
             # look for </div> to finish parsing
             if tag == 'div':
                 self._state = self.states.ACCEPTING
-                print 'entering ACCEPTING state'
+                #print 'entering ACCEPTING state'
 
         elif self._state == self.states.FOUND_CLUE_TEXT:
             # look for </div> to exit this particular clue and return to
             # in_clue_class  state
             if tag == 'div':
                 self._state = self.states.IN_CLUE_CLASS
-                print 'reentering IN_CLUE_CLASS state'
+                #print 'reentering IN_CLUE_CLASS state'
 
         # other states are looking for either starttags or data, not endtags
 
@@ -166,7 +166,7 @@ class ParseClues(HTMLParser.HTMLParser):
                 raise HTMLParser.HTMLParseError('Expected clue number')
 
             self._state = self.states.FOUND_CLUE_NUMBER
-            print 'entering FOUND_CLUE_NUMBER state'
+            #print 'entering FOUND_CLUE_NUMBER state'
 
         elif self._state == self.states.FOUND_CLUE_NUMBER:
             # look for the clue text, remove whitespace
@@ -176,7 +176,7 @@ class ParseClues(HTMLParser.HTMLParser):
                 self._currentClue[1] = match.group(1)
                 self._clueList.append(tuple(self._currentClue))
                 self._state = self.states.FOUND_CLUE_TEXT
-                print 'entering FOUND_CLUE_TEXT state'
+                #print 'entering FOUND_CLUE_TEXT state'
             else:
                 raise HTMLParser.HTMLParseError('Expected clue')
 
@@ -241,12 +241,12 @@ class ParseGrid(HTMLParser.HTMLParser):
         if self._state == self.states.NEUTRAL:
             if tag == 'table' and ('id', 'tblCrossword') in attrs:
                 self._state = self.states.IN_XWORD
-                print 'entering IN_XWORD state'
+                #print 'entering IN_XWORD state'
 
         elif self._state == self.states.IN_XWORD:
             if tag == 'tr':
                 self._state = self.states.IN_ROW
-                print 'entering IN_ROW state'
+                #print 'entering IN_ROW state'
 
         elif self._state == self.states.IN_ROW:
             if tag == 'td':
@@ -257,39 +257,39 @@ class ParseGrid(HTMLParser.HTMLParser):
                         if match:
                             self._row = int(match.group(2)) - 1
                             self._col = int(match.group(1)) - 1
-                            print 'found square: ' + str((self._row, self._col))
+                            #print 'found square: ' + str((self._row, self._col))
 
                             if ('bgcolor', 'black') in attrs:
-                                print 'adding black square'
+                                #print 'adding black square'
 
                                 self._grid.setSquare(self._row, self._col, Square(self._grid, self._row, self._col))
                                 self._state = self.states.IN_ROW
-                                print 'reentering IN_ROW state'
+                                #print 'reentering IN_ROW state'
 
                             else:
                                 self._state = self.states.WHITE_SQUARE
-                                print 'entering WHITE_SQUARE state'
+                                #print 'entering WHITE_SQUARE state'
                             return
 
     def handle_endtag(self, tag):
         if self._state == self.states.IN_ROW:
             if tag == 'tr':
                 self._state = self.states.IN_XWORD
-                print 'reentering IN_XWORD state'
+                #print 'reentering IN_XWORD state'
         elif self._state == self.states.IN_XWORD:
             if tag == 'table':
                 self._state = self.states.ACCEPTING
-                print 'entering ACCEPTING state'
+                #print 'entering ACCEPTING state'
 
     def handle_data(self, data):
         if self._state == self.states.WHITE_SQUARE:
             numPat = re.compile(r"\D*(\d*)")
             match = re.match(numPat, data)
             if match:
-                print 'Adding white square: ' + match.group(1)
+                #print 'Adding white square: ' + match.group(1)
                 self._grid.setSquare(self._row, self._col, Square(self._grid, self._row, self._col, letter='', number=match.group(1)))
                 self._state = self.states.IN_ROW
-                print 'reentering IN_ROW state'
+                #print 'reentering IN_ROW state'
             else:
                 raise HTMLParser.HTMLParseError('Expected number or blank')
 

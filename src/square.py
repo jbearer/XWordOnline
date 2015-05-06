@@ -31,7 +31,7 @@ class Square():
     HEIGHT = 50
     PADDING = 10
 
-    def __init__(self, parent, row, col, letter = None, number = ''):
+    def __init__(self, parent, row, col, letter = None, number = '', updated = True, answer = ''):
         number = str(number)
         self.parent = parent
         self.row = row
@@ -106,3 +106,15 @@ class Square():
     def setText(self, text):
         if self._lblLetter:
             self._lblLetter.text = text
+            self._updated = True
+
+    def __repr__(self):
+        #if self.letter:
+        #    return 'Square(None,' + str(self.row) + ',' + str(self.col) + ',\'' + self.letter + '\',\'' + self.number + '\')'
+        #else:
+        #    return 'Square(None,' + str(self.row) + ',' + str(self.col) + ',None,\'' + self.number + '\')'
+
+        if self._lblLetter:
+            return str({'row':self.row, 'col':self.col, 'letter':self._lblLetter.text, 'number':self._lblNumber.text})
+        else:
+            return str({'row':self.row, 'col':self.col, 'letter':None, 'number':self._lblNumber.text})

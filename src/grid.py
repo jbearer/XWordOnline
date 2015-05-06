@@ -19,11 +19,12 @@ class Grid():
     _focusedSquare: the square with the focus
     '''
 
-    def __init__(self, width = 0, height = None, x = 0, y = 0):
+    def __init__(self, width = 0, height = None, x = 0, y = 0, squares = []):
         '''
         Create a grid of width x height empty squares.
         If the argument height is absent, the grid is square with side length = width
         '''
+        print 'grid constrcutor called'
 
         if height is None:
             height = width
@@ -32,7 +33,7 @@ class Grid():
         self.height = height * Square.HEIGHT
         self.numRows = height
         self.numCols = width
-        self._squares = []
+        self._squares = squares
         self._focusedSquare = None
 
         self.x = x
@@ -136,8 +137,9 @@ class Grid():
                     break
 
     def on_key_press(self, symbol, modifiers):
-
+        print 'got key press'
         if self._focusedSquare:
+            print 'focused square'
             if symbol >= key.A and symbol <= key.Z:
                 self._focusedSquare.setText(chr(symbol).upper())
 
@@ -181,7 +183,9 @@ class Grid():
 
                 elif symbol == key.RETURN or symbol == key.DOWN:
                     # move down one
+                    print 'finding square'
                     row, col = self.findSquare(self._focusedSquare)
+                    print (row, col)
                     row += 1
                     if row > self.numRows - 1:
                         row = 0
@@ -195,3 +199,26 @@ class Grid():
                     # delete the text in the focused square
                     self._focusedSquare.setText('')
 
+    def _makeSquares(self, squares):
+        '''
+        Copy a list of square data (row, col, letter, and number) into self's squares, updating each square's parent.
+        Return self.
+        Used by repr
+        '''
+        print 'in make squares'
+        for square in squares:
+            print 'setting square'
+            self.setSquare(square['row'], square['col'], Square(self, square['row'], square['col'], square['letter'], square['number']))
+            print 'square set'
+        print 'returning'
+        return self
+
+    def __repr__(self):
+        squareL = '['
+        for row in self._squares:
+            for square in row:
+                squareL += repr(square) + ','
+        squareL = squareL[:-1]
+        squareL += ']'
+        gridCons = 'Grid(' + str(self.width / Square.WIDTH) + ',' + str(self.height / Square.HEIGHT) + ',' + str(self.x) + ',' + str(self.y) + ')'
+        return '[newGrid._makeSquares(' + squareL + ') for newGrid in [' + gridCons + ']][0]'
