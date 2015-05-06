@@ -78,14 +78,7 @@ class Crossword(pyglet.window.Window):
         if not fromSave:
             self.loadPuzzleFromSource(url)
 
-        self._grid._squares[0][0].setText('A')
-
-        oldGrid = self._grid
-        print 'evaling'
-        print repr(self._grid)
-        print 'evaling now'
-        self._grid = eval(repr(self._grid))
-        print 'done evaling' + str(self._grid == oldGrid)
+        self._grid.update()
 
 
     def parseHTMLFromSave(self, html):

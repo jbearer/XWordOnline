@@ -1,5 +1,10 @@
 from square import Square
 from pyglet.window import key
+import urllib
+import urllib2
+
+saveURL = 'https://raw.githubusercontent.com/jbearer/XWordOnline/master/saved puzzles/'
+puzzleName = 'crossword.xwd'
 
 class Grid():
     '''
@@ -202,6 +207,25 @@ class Grid():
             print 'square set'
         print 'returning'
         return self
+
+    def update(self):
+        '''
+        Write changes to the web-based crossword data and update self with new changes
+        '''
+
+        #TODO: get some kind of lock from the webpage so we're not reading at the same time as another user
+        #TODO: read and update squares, unless they have been updated locally since the last update
+
+        # write
+        url = saveURL + puzzleName
+        values = {'name' : puzzleName,
+                  'data' : repr(self) }
+
+        data = urllib.urlencode(values)
+        req = urllib2.Request(url, data)
+        response = urllib2.urlopen(req)
+        the_page = response.read()
+        print the_page
 
     def __repr__(self):
         squareL = '['
