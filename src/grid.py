@@ -113,16 +113,6 @@ class Grid():
         if self._focusedSquare:
             self._focusedSquare.draw(window)
 
-    def findSquare(self, target):
-        '''
-        Return a (row, col) tuple with the index of the given square. Return None if not found
-        '''
-        for row in range(self.numRows):
-            for col in range(self.numCols):
-                if self._squares[row][col] == target:
-                    return (row, col)
-        return None
-
     def hit_test(self, x, y):
         return (self.x < x < self.x + self.width and  
                 self.y < y < self.y + self.height)
@@ -147,7 +137,7 @@ class Grid():
 
                 if (modifiers & key.MOD_SHIFT and symbol == key.TAB) or symbol == key.LEFT:
                     # move left one
-                    row, col = self.findSquare(self._focusedSquare)
+                    row, col = self._focusedSquare.row, self._focusedSquare.col
                     col -= 1
                     if col < 0:
                         col = self.numCols - 1
@@ -159,7 +149,7 @@ class Grid():
 
                 elif symbol == key.TAB or symbol == key.RIGHT:
                     # move right one 
-                    row, col = self.findSquare(self._focusedSquare)
+                    row, col = self._focusedSquare.row, self._focusedSquare.col
                     col += 1
                     if col > self.numCols - 1:
                         col = 0
@@ -171,7 +161,7 @@ class Grid():
 
                 elif (modifiers & key.MOD_SHIFT and symbol == key.RETURN) or symbol == key.UP:
                     # move up one
-                    row, col = self.findSquare(self._focusedSquare)
+                    row, col = self._focusedSquare.row, self._focusedSquare.col
                     row -= 1
                     if row < 0:
                         row = self.numRows - 1
@@ -184,7 +174,7 @@ class Grid():
                 elif symbol == key.RETURN or symbol == key.DOWN:
                     # move down one
                     print 'finding square'
-                    row, col = self.findSquare(self._focusedSquare)
+                    row, col = self._focusedSquare.row, self._focusedSquare.col
                     print (row, col)
                     row += 1
                     if row > self.numRows - 1:

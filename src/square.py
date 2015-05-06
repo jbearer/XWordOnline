@@ -109,11 +109,6 @@ class Square():
             self._updated = True
 
     def __repr__(self):
-        #if self.letter:
-        #    return 'Square(None,' + str(self.row) + ',' + str(self.col) + ',\'' + self.letter + '\',\'' + self.number + '\')'
-        #else:
-        #    return 'Square(None,' + str(self.row) + ',' + str(self.col) + ',None,\'' + self.number + '\')'
-
         if self._lblLetter:
             return str({'row':self.row, 'col':self.col, 'letter':self._lblLetter.text, 'number':self._lblNumber.text})
         else:
