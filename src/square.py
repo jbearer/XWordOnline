@@ -41,6 +41,7 @@ class Square():
         self.x = col * self.WIDTH
         self.y = (parent.getNumRows() - row - 1) * self.HEIGHT
         self.hasFocus = False
+        self.updated = updated
 
         if letter is not None:
             self._lblLetter = pyglet.text.Label(letter, anchor_x = 'center', anchor_y = 'center', font_size = 12)
@@ -106,7 +107,7 @@ class Square():
     def setText(self, text):
         if self._lblLetter:
             self._lblLetter.text = text
-            self._updated = True
+            self.updated = True
 
     def __repr__(self):
         if self._lblLetter:

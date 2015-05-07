@@ -282,7 +282,12 @@ class ParseGrid(HTMLParser.HTMLParser):
                 #print 'entering ACCEPTING state'
 
     def handle_data(self, data):
-        if self._state == self.states.WHITE_SQUARE:
+        if self._state == self.states.NEUTRAL:
+            namePat = re.compile(r"Crossword for.+")
+            if re.match(namePat, data):
+                self._grid.name = data
+
+        elif self._state == self.states.WHITE_SQUARE:
             numPat = re.compile(r"\D*(\d*)")
             match = re.match(numPat, data)
             if match:
