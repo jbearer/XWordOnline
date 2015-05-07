@@ -1,10 +1,15 @@
 from square import Square
 from pyglet.window import key
-import urllib
-import urllib2
+import requests
+import os
+import binascii
+import threading
 
-saveURL = 'https://raw.githubusercontent.com/jbearer/XWordOnline/master/saved puzzles/'
-puzzleName = 'crossword.xwd'
+savePath = '~/Dropbox/'
+
+# must be acquired before doing anything that will change the state of the grid
+updateLock = threading.Lock()
+stopUpdating = False
 
 class Grid():
     '''
@@ -24,7 +29,7 @@ class Grid():
     _focusedSquare: the square with the focus
     '''
 
-    def __init__(self, width = 0, height = None, x = 0, y = 0, squares = []):
+    def __init__(self, width = 0, height = None, x = 0, y = 0, name = 'crossword'):
         '''
         Create a grid of width x height empty squares.
         If the argument height is absent, the grid is square with side length = width
@@ -38,8 +43,9 @@ class Grid():
         self.height = height * Square.HEIGHT
         self.numRows = height
         self.numCols = width
-        self._squares = squares
+        self._squares = []
         self._focusedSquare = None
+        self.name = name
 
         self.x = x
         self.y = y
@@ -49,6 +55,9 @@ class Grid():
             for col in range(width):
                 newRow.append(Square(self, row, col, ''))
             self._squares.append(newRow)
+
+        self._updateThread = UpdateThread(self)
+        self._updateThread.run()
 
     def getSquare(self, row, col):
         return self._squares[row][col]
@@ -60,7 +69,9 @@ class Grid():
         while col >= self.getNumCols():
             self.addCol()
         
+        updateLock.acquire()
         self._squares[row][col] = square
+        updateLock.release()
 
     def getNumRows(self):
         return self.numRows
@@ -80,7 +91,9 @@ class Grid():
         for col in range(self.getNumCols()):
             newRow.append(Square(self, self.getNumRows(), col, ''))
 
+        updateLock.acquire()
         self._squares.append(newRow)
+        updateLock.release()
 
     def addCol(self):
         '''
@@ -90,11 +103,16 @@ class Grid():
         self.numCols += 1
         self.width += Square.WIDTH
 
+        updateLock.acquire()
         for row in range(self.getNumRows()):
             self._squares[row].append(Square(self,row,self.getNumCols(), ''))
+        updateLock.release()
 
 
     def setFocusedSquare(self, square):
+
+        updateLock.acquire()
+
         if square and square.letter is None:
             # black square cannot have focus
             return
@@ -106,6 +124,8 @@ class Grid():
             square.hasFocus = True
 
         self._focusedSquare = square
+
+        updateLock.release()
 
     def draw(self, window):
 
@@ -136,7 +156,9 @@ class Grid():
         if self._focusedSquare:
             print 'focused square'
             if symbol >= key.A and symbol <= key.Z:
+                updateLock.acquire()
                 self._focusedSquare.setText(chr(symbol).upper())
+                updateLock.release()
 
             if self._focusedSquare:
 
@@ -192,7 +214,9 @@ class Grid():
 
                 elif symbol == key.BACKSPACE or symbol == key.DELETE:
                     # delete the text in the focused square
+                    updateLock.acquire()
                     self._focusedSquare.setText('')
+                    updateLock.release()
 
     def _makeSquares(self, squares):
         '''
@@ -213,19 +237,45 @@ class Grid():
         Write changes to the web-based crossword data and update self with new changes
         '''
 
-        #TODO: get some kind of lock from the webpage so we're not reading at the same time as another user
-        #TODO: read and update squares, unless they have been updated locally since the last update
-
         # write
-        url = saveURL + puzzleName
-        values = {'name' : puzzleName,
-                  'data' : repr(self) }
+        name = ''
+        for char in self.name:
+            if (char.isalpha()):
+                name += char
+        name += '.xwd'
 
-        data = urllib.urlencode(values)
-        req = urllib2.Request(url, data)
-        response = urllib2.urlopen(req)
-        the_page = response.read()
-        print the_page
+        #TODO: get some kind of lock from the webpage so we're not reading at the same time as another user
+
+        try:
+            f = open(os.path.expanduser(savePath) + name, 'r')
+            binData = f.read()
+            f.close()
+
+            decData = int(binData, 2)
+            data = binascii.unhexlify('%x' % decData)
+
+            savedGrid = eval(data)
+
+            for row in range(len(self._squares)):
+                for col in range(len(self._squares[row])):
+                    if not self.getSquare(row, col).updated:
+                        updateLock.acquire()
+                        self._squares[row][col] = savedGrid.getSquare(row, col)
+                        updateLock.release()
+                    else:
+                        self._squares[row][col].updated = False
+
+        except:
+            # the file hasn't been written yet,
+            # we're about to write it anyway
+            pass
+
+
+        data = bin(int(binascii.hexlify(repr(self)), 16))
+
+        f = open(os.path.expanduser(savePath) + name, 'w')
+        f.write(data)
+        f.close()
 
     def __repr__(self):
         squareL = '['
@@ -236,3 +286,12 @@ class Grid():
         squareL += ']'
         gridCons = 'Grid(' + str(self.width / Square.WIDTH) + ',' + str(self.height / Square.HEIGHT) + ',' + str(self.x) + ',' + str(self.y) + ')'
         return '[newGrid._makeSquares(' + squareL + ') for newGrid in [' + gridCons + ']][0]'
+
+class UpdateThread(threading.Thread):
+    def __init__(self, grid):
+        super(UpdateThread, self).__init__()
+        self._grid = grid
+
+    def run(self):
+        while not stopUpdating:
+            self._grid.update()

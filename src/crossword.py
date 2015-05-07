@@ -78,8 +78,6 @@ class Crossword(pyglet.window.Window):
         if not fromSave:
             self.loadPuzzleFromSource(url)
 
-        self._grid.update()
-
 
     def parseHTMLFromSave(self, html):
         '''
