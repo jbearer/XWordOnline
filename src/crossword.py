@@ -5,7 +5,6 @@ from grid import *
 from pyglet.gl import *
 import xwordhtmlparser as parser
 from menubutton import MenuButton
-
 CLUE_WIDTH = 150
 HORIZ_PADDING = 10
 VERT_PADDING = 10
@@ -78,6 +77,7 @@ class Crossword(pyglet.window.Window):
         if not fromSave:
             self.loadPuzzleFromSource(url)
 
+        self._grid.beginUpdates()
 
     def parseHTMLFromSave(self, html):
         '''
@@ -259,3 +259,7 @@ class Crossword(pyglet.window.Window):
 
     def refresh(self):
         pass
+
+    def on_close(self):
+        self._grid.stopUpdates()
+        self.close()

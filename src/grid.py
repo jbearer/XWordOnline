@@ -4,6 +4,7 @@ import requests
 import os
 import binascii
 import threading
+import gc
 
 savePath = '~/Dropbox/'
 
@@ -34,7 +35,6 @@ class Grid():
         Create a grid of width x height empty squares.
         If the argument height is absent, the grid is square with side length = width
         '''
-        print 'grid constrcutor called'
 
         if height is None:
             height = width
@@ -56,8 +56,7 @@ class Grid():
                 newRow.append(Square(self, row, col, ''))
             self._squares.append(newRow)
 
-        self._updateThread = UpdateThread(self)
-        self._updateThread.run()
+        self._updateThread = None
 
     def getSquare(self, row, col):
         return self._squares[row][col]
@@ -91,7 +90,9 @@ class Grid():
         for col in range(self.getNumCols()):
             newRow.append(Square(self, self.getNumRows(), col, ''))
 
+        print 'addRow waiting for lock'
         updateLock.acquire()
+        print 'addRow lock acquired'
         self._squares.append(newRow)
         updateLock.release()
 
@@ -103,7 +104,10 @@ class Grid():
         self.numCols += 1
         self.width += Square.WIDTH
 
+        print 'addCol waiting for lock'
         updateLock.acquire()
+        print 'addCol lock acquired'
+
         for row in range(self.getNumRows()):
             self._squares[row].append(Square(self,row,self.getNumCols(), ''))
         updateLock.release()
@@ -111,7 +115,9 @@ class Grid():
 
     def setFocusedSquare(self, square):
 
+        print 'setFocusedSquare waiting for lock'
         updateLock.acquire()
+        print 'setFocusedSquare lock acquired'
 
         if square and square.letter is None:
             # black square cannot have focus
@@ -152,11 +158,11 @@ class Grid():
                     break
 
     def on_key_press(self, symbol, modifiers):
-        print 'got key press'
         if self._focusedSquare:
-            print 'focused square'
             if symbol >= key.A and symbol <= key.Z:
+                print 'on_key_press waiting for lock'
                 updateLock.acquire()
+                print 'on_key_press lock acquired'
                 self._focusedSquare.setText(chr(symbol).upper())
                 updateLock.release()
 
@@ -214,7 +220,9 @@ class Grid():
 
                 elif symbol == key.BACKSPACE or symbol == key.DELETE:
                     # delete the text in the focused square
+                    print 'backspace waiting for lock'
                     updateLock.acquire()
+                    print 'backspace lock acquired'
                     self._focusedSquare.setText('')
                     updateLock.release()
 
@@ -224,58 +232,19 @@ class Grid():
         Return self.
         Used by repr
         '''
-        print 'in make squares'
         for square in squares:
-            print 'setting square'
             self.setSquare(square['row'], square['col'], Square(self, square['row'], square['col'], square['letter'], square['number']))
-            print 'square set'
-        print 'returning'
         return self
 
-    def update(self):
-        '''
-        Write changes to the web-based crossword data and update self with new changes
-        '''
+    def beginUpdates(self):
+        stopUpdating = False
+        self._updateThread = UpdateThread(self)
+        print 'beginning thread'
+        self._updateThread.start()
+        print 'returning'
 
-        # write
-        name = ''
-        for char in self.name:
-            if (char.isalpha()):
-                name += char
-        name += '.xwd'
-
-        #TODO: get some kind of lock from the webpage so we're not reading at the same time as another user
-
-        try:
-            f = open(os.path.expanduser(savePath) + name, 'r')
-            binData = f.read()
-            f.close()
-
-            decData = int(binData, 2)
-            data = binascii.unhexlify('%x' % decData)
-
-            savedGrid = eval(data)
-
-            for row in range(len(self._squares)):
-                for col in range(len(self._squares[row])):
-                    if not self.getSquare(row, col).updated:
-                        updateLock.acquire()
-                        self._squares[row][col] = savedGrid.getSquare(row, col)
-                        updateLock.release()
-                    else:
-                        self._squares[row][col].updated = False
-
-        except:
-            # the file hasn't been written yet,
-            # we're about to write it anyway
-            pass
-
-
-        data = bin(int(binascii.hexlify(repr(self)), 16))
-
-        f = open(os.path.expanduser(savePath) + name, 'w')
-        f.write(data)
-        f.close()
+    def stopUpdates(self):
+        stopUpdating = True
 
     def __repr__(self):
         squareL = '['
@@ -294,4 +263,50 @@ class UpdateThread(threading.Thread):
 
     def run(self):
         while not stopUpdating:
-            self._grid.update()
+            self.updateGrid()
+            gc.collect()
+    
+    def updateGrid(self):
+        '''
+        Write changes to the web-based crossword data and update self with new changes
+        '''
+
+        # write
+        name = ''
+        for char in self._grid.name:
+            if (char.isalpha()):
+                name += char
+        name += '.xwd'
+
+        #TODO: get some kind of lock from the webpage so we're not reading at the same time as another user
+
+        try:
+            f = open(os.path.expanduser(savePath) + name, 'r')
+            binData = f.read()
+            f.close()
+
+            decData = int(binData, 2)
+            data = binascii.unhexlify('%x' % decData)
+
+            savedGrid = eval(data)
+
+            for row in range(len(self._grid._squares)):
+                for col in range(len(self._grid._squares[row])):
+                    if not self._grid.getSquare(row, col).updated:
+                        updateLock.acquire()
+                        self._grid._squares[row][col] = savedGrid.getSquare(row, col)
+                        updateLock.release()
+                    else:
+                        self._grid._squares[row][col].updated = False
+
+        except:
+            # the file hasn't been written yet,
+            # we're about to write it anyway
+            pass
+
+
+        data = bin(int(binascii.hexlify(repr(self._grid)), 16))
+
+        f = open(os.path.expanduser(savePath) + name, 'w')
+        f.write(data)
+        f.close()
